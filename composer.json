@@ -1,0 +1,22 @@
+{
+    "name": "meshell/ffi-pinyin",
+    "description": "Quickly convert Chinese to chinese pinyin",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "zhoutianliang",
+            "email": "mfkgdyve@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+      "php": ">=7.4",
+      "ext-ffi": "*"
+    },
+    "autoload": {
+      "psr-4": {
+        "FastFFI\\Pinyin\\": "src/"
+      }
+    }
+}

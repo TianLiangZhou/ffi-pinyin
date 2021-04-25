@@ -96,6 +96,8 @@ Bench | benchNativeGenerator | 0 | 1 | 0 | 632,680b | 125,524.000μs | 0.00σ | 
 相比之下与比较对象最快的差不多20倍的性能之差。
 
 
+[在线转换](http://loocode.com/tool/pinyin/chinese-to-pinyin)
+
 ### FAQ
 
 - 在`centos`上执行失败?

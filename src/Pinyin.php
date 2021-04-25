@@ -30,7 +30,7 @@ class Pinyin
     /**
      * @return static
      */
-    public static function new(): static
+    public static function new(): Pinyin
     {
         if (self::$py == null) {
             self::$py = new static();

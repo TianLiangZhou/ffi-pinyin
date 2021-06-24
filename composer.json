@@ -11,16 +11,16 @@
     ],
     "minimum-stability": "stable",
     "require": {
-      "php": ">=7.4",
-      "ext-ffi": "*"
+        "php": "^7.4",
+        "ext-ffi": "*"
     },
     "require-dev": {
-      "phpbench/phpbench": "^0.17.1",
-      "overtrue/pinyin": "^4.0"
+        "phpbench/phpbench": "^0.17.1",
+        "overtrue/pinyin": "^4.0"
     },
     "autoload": {
-      "psr-4": {
-        "FastFFI\\Pinyin\\": "src/"
-      }
+        "psr-4": {
+            "FastFFI\\Pinyin\\": "src/"
+        }
     }
 }

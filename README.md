@@ -20,22 +20,42 @@ include __DIR__ . '/../src/Pinyin.php';
 
 $py = FastFFI\Pinyin\Pinyin::new();
 
-echo "无音标: ", $py->plain("中国人..."), "\n";
+echo "转换无音标: ", $py->plain("中国人...😄😄👩"), "\n";
+echo "无音标: ", $py->plain("中国人...😄😄👩", false), "\n";
 echo "首字母: ", $py->letter("中国人"), "\n";
 echo "音标: ", $py->tone("中国人"), "\n";
 echo "多音音标:", $py->tone_multi("中国人"), "\n";
+
+var_export($py->plainArray("我的中国心，永恒之❤️", false));
 
 ```
 
 以上程序执行后的结果: 
 
-> 无音标: zhong guo ren - - -
+> 无音标: zhong guo ren - - - - - -
+> 
+> 无音标: zhong guo ren . . . 😄 😄 👩
 > 
 > 首字母: z g r
 > 
 > 音标: zhōng guó rén
 > 
 > 多音音标:zhōng:zhòng guó rén
+> 
+> array (
+> 0 => 'wo',
+> 1 => 'de',
+> 2 => 'zhong',
+> 3 => 'guo',
+> 4 => 'xin',
+> 5 => '，',
+> 6 => 'yong',
+> 7 => 'heng',
+> 8 => 'zhi',
+> 9 => '❤',
+> 10 => '️',
+> )
+
 
 转换后的多个拼音都是以`" "`空格隔开，不能识别的字符都是以`-`来代替，多音字是以`:`来连接的。
 

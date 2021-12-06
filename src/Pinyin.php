@@ -3,6 +3,7 @@ namespace FastFFI\Pinyin;
 
 use FFI;
 use RuntimeException;
+use function Symfony\Component\String\s;
 
 class Pinyin
 {
@@ -47,30 +48,60 @@ class Pinyin
      * 普通风格没有音调
      *
      * @param string $str
+     * @param bool $isConvert 是否将无法识别的字转成 "-"
      * @return string
      */
-    public function plain(string $str): string
+    public function plain(string $str, bool $isConvert = true): string
     {
         if (empty($str)) {
             return "";
         }
-        $char = $this->ffi->plain($str);
+        $char = $this->ffi->plain($str, (int) $isConvert);
         return $this->convert($char);
+    }
+
+    /**
+     * @param string $str
+     * @param bool $isConvert 是否将无法识别的字转成 "-"
+     * @return array
+     */
+    public function plainArray(string $str, bool $isConvert = true): array
+    {
+        if (empty($str)) {
+            return [];
+        }
+        $plainArray = $this->ffi->plain_array($str, (int)$isConvert);
+        return $this->convertArray($plainArray);
     }
 
     /**
      * 音调
      *
      * @param string $str
+     * @param bool $isConvert 是否将无法识别的字转成 "-"
      * @return string
      */
-    public function tone(string $str): string
+    public function tone(string $str, bool $isConvert = true): string
     {
         if (empty($str)) {
             return "";
         }
-        $char = $this->ffi->tone($str);
+        $char = $this->ffi->tone($str, (int) $isConvert);
         return $this->convert($char);
+    }
+
+    /**
+     * @param string $str
+     * @param bool $isConvert 是否将无法识别的字转成 "-"
+     * @return array
+     */
+    public function toneArray(string $str, bool $isConvert = true): array
+    {
+        if (empty($str)) {
+            return [];
+        }
+        $toneArray = $this->ffi->tone_array($str, (int)$isConvert);
+        return $this->convertArray($toneArray);
     }
 
     /**
@@ -114,6 +145,21 @@ class Pinyin
         $result = FFI::string($CData);
         $this->ffi->free_pointer($CData);
         return $result;
+    }
+
+
+    /**
+     * @param FFI\CData $cData
+     * @return array
+     */
+    private function convertArray(FFI\CData $cData)
+    {
+        $pinyin = [];
+        for ($i = 0; $i < $cData->len; $i++) {
+            $pinyin[] =  FFI::string($cData->array[$i]->data, $cData->array[$i]->len);
+        }
+        $this->ffi->free_array($cData);
+        return $pinyin;
     }
 
     /**

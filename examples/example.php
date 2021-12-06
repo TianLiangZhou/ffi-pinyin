@@ -5,10 +5,15 @@ include __DIR__ . '/../src/Pinyin.php';
 
 $py = FastFFI\Pinyin\Pinyin::new();
 
-echo "无音标: ", $py->plain("中国人..."), "\n";
+echo "转换无音标: ", $py->plain("中国人...😄😄👩"), "\n";
+echo "无音标: ", $py->plain("中国人...😄😄👩", false), "\n";
 echo "首字母: ", $py->letter("中国人"), "\n";
-echo "音标: ", $py->tone("中国人"), "\n";
+echo "音标: ", $py->tone("中国人", false), "\n";
 echo "多音音标:", $py->tone_multi("中国人"), "\n";
+
+var_export($py->plainArray("我的中国心，永恒之❤️", false));
+
+echo "\n";
 
 $test = <<<EOF
 关关雎鸠，在河之洲。窈窕淑女，君子好逑。

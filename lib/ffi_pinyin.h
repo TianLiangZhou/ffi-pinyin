@@ -14,18 +14,26 @@ typedef struct PinyinArray {
   struct PinyinStr *array;
 } PinyinArray;
 
-char *plain(const char *str, int is_convert);
+char *plain(const char *str, int is_convert, int is_multi);
 
-char *tone(const char *str, int is_convert);
+char *tone(const char *str, int is_convert, int is_multi);
 
-char *letter(const char *str);
+char *tone_num(const char *str, int is_convert, int is_multi);
 
-struct PinyinArray *plain_array(const char *str, int is_convert);
+char *tone_num_end(const char *str, int is_convert, int is_multi);
 
-struct PinyinArray *tone_array(const char *str, int is_convert);
+char *letter(const char *str, int is_convert, int is_multi);
 
-char *tone_multi(const char *str);
+PinyinArray *plain_array(const char *str, int is_convert, int is_multi);
+
+PinyinArray *tone_array(const char *str, int is_convert, int is_multi);
+
+PinyinArray *tone_num_array(const char *str, int is_convert, int is_multi);
+
+PinyinArray *tone_num_end_array(const char *str, int is_convert, int is_multi);
+
+PinyinArray *letter_array(const char *str, int is_convert, int is_multi);
 
 void free_pointer(char *ptr);
 
-void free_array(struct PinyinArray *array);
+void free_array(PinyinArray *array);

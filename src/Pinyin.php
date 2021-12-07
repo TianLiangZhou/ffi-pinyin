@@ -3,7 +3,6 @@ namespace FastFFI\Pinyin;
 
 use FFI;
 use RuntimeException;
-use function Symfony\Component\String\s;
 
 class Pinyin
 {
@@ -49,29 +48,16 @@ class Pinyin
      *
      * @param string $str
      * @param bool $isConvert 是否将无法识别的字转成 "-"
+     * @param bool $isMulti 是否多音字模式
      * @return string
      */
-    public function plain(string $str, bool $isConvert = true): string
+    public function plain(string $str, bool $isConvert = true, bool $isMulti = false): string
     {
         if (empty($str)) {
             return "";
         }
-        $char = $this->ffi->plain($str, (int) $isConvert);
+        $char = $this->ffi->plain($str, (int) $isConvert, (int) $isMulti);
         return $this->convert($char);
-    }
-
-    /**
-     * @param string $str
-     * @param bool $isConvert 是否将无法识别的字转成 "-"
-     * @return array
-     */
-    public function plainArray(string $str, bool $isConvert = true): array
-    {
-        if (empty($str)) {
-            return [];
-        }
-        $plainArray = $this->ffi->plain_array($str, (int)$isConvert);
-        return $this->convertArray($plainArray);
     }
 
     /**
@@ -79,43 +65,49 @@ class Pinyin
      *
      * @param string $str
      * @param bool $isConvert 是否将无法识别的字转成 "-"
+     * @param bool $isMulti 是否多音字模式
      * @return string
      */
-    public function tone(string $str, bool $isConvert = true): string
+    public function tone(string $str, bool $isConvert = true, bool $isMulti = false): string
     {
         if (empty($str)) {
             return "";
         }
-        $char = $this->ffi->tone($str, (int) $isConvert);
+        $char = $this->ffi->tone($str, (int) $isConvert, (int) $isMulti);
         return $this->convert($char);
     }
 
     /**
-     * @param string $str
-     * @param bool $isConvert 是否将无法识别的字转成 "-"
-     * @return array
-     */
-    public function toneArray(string $str, bool $isConvert = true): array
-    {
-        if (empty($str)) {
-            return [];
-        }
-        $toneArray = $this->ffi->tone_array($str, (int)$isConvert);
-        return $this->convertArray($toneArray);
-    }
-
-    /**
-     * 多音字音调
+     * 音调为数字
      *
      * @param string $str
+     * @param bool $isConvert 是否将无法识别的字转成 "-"
+     * @param bool $isMulti 是否多音字模式
      * @return string
      */
-    public function tone_multi(string $str): string
+    public function toneNum(string $str, bool $isConvert = true, bool $isMulti = false): string
     {
         if (empty($str)) {
             return "";
         }
-        $char = $this->ffi->tone_multi($str);
+        $char = $this->ffi->tone_num($str, (int) $isConvert, (int) $isMulti);
+        return $this->convert($char);
+    }
+
+    /**
+     * 音调为数字
+     *
+     * @param string $str
+     * @param bool $isConvert 是否将无法识别的字转成 "-"
+     * @param bool $isMulti 是否多音字模式
+     * @return string
+     */
+    public function toneNumEnd(string $str, bool $isConvert = true, bool $isMulti = false): string
+    {
+        if (empty($str)) {
+            return "";
+        }
+        $char = $this->ffi->tone_num_end($str, (int) $isConvert, (int) $isMulti);
         return $this->convert($char);
     }
 
@@ -123,18 +115,98 @@ class Pinyin
      * 首字母
      *
      * @param string $str
+     * @param bool $isConvert 是否将无法识别的字转成 "-"
+     * @param bool $isMulti 是否多音字模式
      * @return string
      */
-    public function letter(string $str): string
+    public function letter(string $str, bool $isConvert = true, bool $isMulti = false): string
     {
         if (empty($str)) {
             return "";
         }
-        $char = $this->ffi->letter($str);
+        $char = $this->ffi->letter($str, (int) $isConvert, (int) $isMulti);
         return $this->convert($char);
     }
 
+    /**
+     *
+     * @param string $str
+     * @param bool $isConvert 是否将无法识别的字转成 "-"
+     * @param bool $isMulti 是否多音字模式
+     * @return array
+     */
+    public function plainArray(string $str, bool $isConvert = true, bool $isMulti = false): array
+    {
+        if (empty($str)) {
+            return [];
+        }
+        $plainArray = $this->ffi->plain_array($str, (int) $isConvert, (int) $isMulti);
+        return $this->convertArray($plainArray);
+    }
 
+    /**
+     *
+     * @param string $str
+     * @param bool $isConvert 是否将无法识别的字转成 "-"
+     * @param bool $isMulti 是否多音字模式
+     * @return array
+     */
+    public function toneArray(string $str, bool $isConvert = true, bool $isMulti = false): array
+    {
+        if (empty($str)) {
+            return [];
+        }
+        $toneArray = $this->ffi->tone_array($str, (int) $isConvert, (int) $isMulti);
+        return $this->convertArray($toneArray);
+    }
+
+    /**
+     *
+     * @param string $str
+     * @param bool $isConvert 是否将无法识别的字转成 "-"
+     * @param bool $isMulti 是否多音字模式
+     * @return array
+     */
+    public function toneNumArray(string $str, bool $isConvert = true, bool $isMulti = false): array
+    {
+        if (empty($str)) {
+            return [];
+        }
+        $toneNumArray = $this->ffi->tone_array($str, (int) $isConvert, (int) $isMulti);
+        return $this->convertArray($toneNumArray);
+    }
+
+    /**
+     *
+     * @param string $str
+     * @param bool $isConvert 是否将无法识别的字转成 "-"
+     * @param bool $isMulti 是否多音字模式
+     * @return array
+     */
+    public function toneNumEndArray(string $str, bool $isConvert = true, bool $isMulti = false): array
+    {
+        if (empty($str)) {
+            return [];
+        }
+        $toneNumEndArray = $this->ffi->tone_array($str, (int) $isConvert, (int) $isMulti);
+        return $this->convertArray($toneNumEndArray);
+    }
+
+    /**
+     *
+     * @param string $str
+     * @param bool $isConvert 是否将无法识别的字转成 "-"
+     * @param bool $isMulti 是否多音字模式
+     * @return array
+     */
+    public function letterArray(string $str, bool $isConvert = true, bool $isMulti = false): array
+    {
+        if (empty($str)) {
+            return [];
+        }
+        $letterArray = $this->ffi->tone_array($str, (int) $isConvert, (int) $isMulti);
+        return $this->convertArray($letterArray);
+    }
 
     /**
      * @param FFI\CData $CData

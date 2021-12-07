@@ -1,10 +1,9 @@
-use pinyin::{ToPinyin, PinyinStrIter, Pinyin, PinyinMultiStrIter, ToPinyinMulti};
+use pinyin::{ToPinyin, Pinyin, ToPinyinMulti};
 use std::ffi::{CString, CStr};
-use std::os::raw::{c_char, c_int, c_schar};
+use std::os::raw::{c_char, c_int};
 use std::{mem, ptr};
 
 
-#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct PinyinArray {
     pub len: usize,
@@ -58,94 +57,88 @@ impl Drop for PinyinStr {
     }
 }
 
-
-const PLAIN: fn(Option<Pinyin>) -> &'static str = |t: Option<Pinyin> | {
-    match t {
-        Some(py) => py.plain(),
-        None => "-"
-    }
-};
-
-const TONE: fn(Option<Pinyin>) -> &'static str = |t: Option<Pinyin> | {
-    match t {
-        Some(py) => py.with_tone(),
-        None => "-"
-    }
-};
-
-const LETTER: fn(Option<Pinyin>) -> &'static str = |t: Option<Pinyin> | {
-    match t {
-        Some(py) => py.first_letter(),
-        None => "-"
-    }
-};
-
-
-#[no_mangle]
-pub extern "C" fn plain(str: *const c_char, is_convert: c_int) -> *mut c_char {
-    let str = const_to_str(str);
-    let pinyin = str.to_pinyin();
-    let mut m: String  = String::new();
-    if is_convert == 1 {
-        m = pinyin.map(PLAIN).collect::<Vec<&'static str>>().join(" ")
-    } else {
-        m = pinyin.enumerate().map(|(i, single)| -> String {
-            match single {
-                None => {
-                    str.chars().nth(i).unwrap().to_string()
-                }
-                Some(py) => py.plain().to_string()
-            }
-
-        }).collect::<Vec<String>>().join(" ");
-    }
-    return CString::new(m).unwrap().into_raw();
+#[derive(Copy, Clone)]
+enum Mode {
+    Plain,
+    Tone,
+    Letter,
+    ToneNum,
+    ToneNumEnd
 }
 
-#[no_mangle]
-pub extern "C" fn tone(str: *const c_char, is_convert: c_int) -> *mut c_char {
-    let str = const_to_str(str);
-    let pinyin = str.to_pinyin();
-    let mut m: String  = String::new();
-    if is_convert == 1 {
-        m = pinyin.map(TONE).collect::<Vec<&'static str>>().join(" ")
-    } else {
-        m = pinyin.enumerate().map(|(i, single)| -> String {
-            match single {
-                None => {
-                    str.chars().nth(i).unwrap().to_string()
-                }
-                Some(py) => py.with_tone().to_string()
-            }
 
-        }).collect::<Vec<String>>().join(" ");
+fn match_mode(py: Pinyin, mode: Mode) -> String {
+    match mode {
+        Mode::Plain => py.plain().to_string(),
+        Mode::Tone => py.with_tone().to_string(),
+        Mode::Letter => py.first_letter().to_string(),
+        Mode::ToneNum => py.with_tone_num().to_string(),
+        Mode::ToneNumEnd => py.with_tone_num_end().to_string()
     }
-    return CString::new(m).unwrap().into_raw();
 }
 
-#[no_mangle]
-pub extern "C" fn letter(str: *const c_char) -> *mut c_char {
-    let m: String = const_to_str(str).to_pinyin().map(LETTER).collect::<Vec<&'static str>>().join(" ");
-    return CString::new(m).unwrap().into_raw()
-}
-
-#[no_mangle]
-pub extern "C" fn plain_array(str: *const c_char, is_convert: c_int) -> *mut PinyinArray {
-    let str = const_to_str(str);
-    let pinyin = str.to_pinyin();
-    let mut vec = pinyin.enumerate().map(|(index, word) | {
-        match word {
-            None => {
-                if is_convert == 1 {
-                    return PinyinStr::from_string(String::from("-"));
-                }
-                return PinyinStr::from_string(str.chars().nth(index).unwrap().to_string())
-            }
-            Some(pinyin) => {
-                PinyinStr::from_string(pinyin.plain().to_string())
-            }
+/// **
+///
+/// **
+fn to_pinyin(str: &'static str, is_convert: bool, is_multi: bool, mode: Mode) -> String {
+    let chars = str.chars().collect::<Vec<char>>();
+    let convert = |index: usize| {
+        if is_convert {
+            return String::from("-");
         }
-    }).collect::<Vec<PinyinStr>>();
+        return chars.get(index).unwrap().to_string();
+    };
+    return if is_multi {
+        str.to_pinyin_multi().enumerate().map(|(index, word)| {
+            match word {
+                None => convert(index),
+                Some(multi) => {
+                    multi.into_iter().map(|py| {
+                        match_mode(py, mode)
+                    }).collect::<Vec<String>>().join(":")
+                }
+            }
+        }).collect::<Vec<String>>().join(" ")
+    } else {
+        str.to_pinyin().enumerate().map(|(index, word)| {
+            match word {
+                None => convert(index),
+                Some(py) => match_mode(py, mode)
+            }
+        }).collect::<Vec<String>>().join(" ")
+    };
+}
+
+fn to_pinyin_array(str: &'static str, is_convert: bool, is_multi: bool, mode: Mode) -> Vec<PinyinStr>{
+    let chars = str.chars().collect::<Vec<char>>();
+    let convert = |index: usize| {
+        if is_convert {
+            return PinyinStr::from_string(String::from("-"));
+        }
+        return PinyinStr::from_string(chars.get(index).unwrap().to_string())
+    };
+    return if is_multi {
+        str.to_pinyin_multi().enumerate().map(|(index, word)| {
+            match word {
+                None => convert(index),
+                Some(multi) => {
+                    PinyinStr::from_string(multi.into_iter().map(|py| {
+                        match_mode(py, mode)
+                    }).collect::<Vec<String>>().join(":"))
+                }
+            }
+        }).collect::<Vec<PinyinStr>>()
+    } else {
+        str.to_pinyin().enumerate().map(|(index, word) | {
+            match word {
+                None => convert(index),
+                Some(py) => PinyinStr::from_string(match_mode(py, mode))
+            }
+        }).collect::<Vec<PinyinStr>>()
+    };
+}
+
+fn to_array_pointer(mut vec: Vec<PinyinStr>) -> *mut PinyinArray {
     let len = vec.len();
     let ptr = vec.as_mut_ptr();
     mem::forget(vec);
@@ -155,55 +148,66 @@ pub extern "C" fn plain_array(str: *const c_char, is_convert: c_int) -> *mut Pin
     }))
 }
 
+
 #[no_mangle]
-pub extern "C" fn tone_array(str: *const c_char, is_convert: c_int) -> *mut PinyinArray {
-    let str = const_to_str(str);
-    let pinyin = str.to_pinyin();
-    let mut vec = pinyin.enumerate().map(|(index, word) | {
-        match word {
-            None => {
-                if is_convert == 1 {
-                    return PinyinStr::from_string(String::from("-"));
-                }
-                return PinyinStr::from_string(str.chars().nth(index).unwrap().to_string())
-            }
-            Some(pinyin) => {
-                PinyinStr::from_string(pinyin.with_tone().to_string())
-            }
-        }
-    }).collect::<Vec<PinyinStr>>();
-    let len = vec.len();
-    let ptr = vec.as_mut_ptr();
-    mem::forget(vec);
-    Box::into_raw(Box::new(PinyinArray{
-        array: ptr,
-        len,
-    }))
+pub extern "C" fn plain(str: *const c_char, is_convert: c_int, is_multi: c_int) -> *mut c_char {
+    let pinyin_str = to_pinyin(const_to_str(str), is_convert == 1, is_multi == 1, Mode::Plain);
+    return CString::new(pinyin_str).unwrap().into_raw();
 }
 
 #[no_mangle]
-pub extern "C" fn tone_multi(str: *const c_char) -> *mut c_char {
-    let mut vec:Vec<String> = Vec::new();
-    let iter = const_to_str(str).to_pinyin_multi();
-    for item in iter {
-        if let Some(item) = item {
-            if item.count() > 1 {
-                vec.push(
-                    item.into_iter().map(|x| {
-                        x.with_tone()
-                    }).collect::<Vec<&'static str>>().join(":")
-                )
-            } else {
-                vec.push(item.get(0).with_tone().to_string())
-            }
-        } else {
-            vec.push(String::from("-"));
-        }
-    }
-    return CString::new(vec.join(" ")).unwrap().into_raw()
+pub extern "C" fn tone(str: *const c_char, is_convert: c_int, is_multi: c_int) -> *mut c_char {
+    let pinyin_str = to_pinyin(const_to_str(str), is_convert == 1, is_multi == 1,Mode::Tone);
+    return CString::new(pinyin_str).unwrap().into_raw();
 }
 
+#[no_mangle]
+pub extern "C" fn tone_num(str: *const c_char, is_convert: c_int, is_multi: c_int) -> *mut c_char {
+    let pinyin_str = to_pinyin(const_to_str(str), is_convert == 1, is_multi == 1,Mode::ToneNum);
+    return CString::new(pinyin_str).unwrap().into_raw();
+}
 
+#[no_mangle]
+pub extern "C" fn tone_num_end(str: *const c_char, is_convert: c_int, is_multi: c_int) -> *mut c_char {
+    let pinyin_str = to_pinyin(const_to_str(str), is_convert == 1, is_multi == 1,Mode::ToneNumEnd);
+    return CString::new(pinyin_str).unwrap().into_raw();
+}
+
+#[no_mangle]
+pub extern "C" fn letter(str: *const c_char, is_convert: c_int, is_multi: c_int) -> *mut c_char {
+    let pinyin_str = to_pinyin(const_to_str(str), is_convert == 1, is_multi == 1,Mode::Letter);
+    return CString::new(pinyin_str).unwrap().into_raw();
+}
+
+#[no_mangle]
+pub extern "C" fn plain_array(str: *const c_char, is_convert: c_int, is_multi: c_int) -> *mut PinyinArray {
+    let vec = to_pinyin_array(const_to_str(str), is_convert == 1, is_multi == 1, Mode::Plain);
+    return to_array_pointer(vec);
+}
+
+#[no_mangle]
+pub extern "C" fn tone_array(str: *const c_char, is_convert: c_int, is_multi: c_int) -> *mut PinyinArray {
+    let vec = to_pinyin_array(const_to_str(str), is_convert == 1, is_multi == 1, Mode::Tone);
+    return to_array_pointer(vec);
+}
+
+#[no_mangle]
+pub extern "C" fn tone_num_array(str: *const c_char, is_convert: c_int, is_multi: c_int) -> *mut PinyinArray {
+    let vec = to_pinyin_array(const_to_str(str), is_convert == 1, is_multi == 1, Mode::ToneNum);
+    return to_array_pointer(vec);
+}
+
+#[no_mangle]
+pub extern "C" fn tone_num_end_array(str: *const c_char, is_convert: c_int, is_multi: c_int) -> *mut PinyinArray {
+    let vec = to_pinyin_array(const_to_str(str), is_convert == 1, is_multi == 1, Mode::ToneNumEnd);
+    return to_array_pointer(vec);
+}
+
+#[no_mangle]
+pub extern "C" fn letter_array(str: *const c_char, is_convert: c_int, is_multi: c_int) -> *mut PinyinArray {
+    let vec = to_pinyin_array(const_to_str(str), is_convert == 1, is_multi == 1, Mode::Letter);
+    return to_array_pointer(vec);
+}
 
 
 #[no_mangle]
@@ -226,90 +230,30 @@ pub unsafe extern "C" fn free_array(array: *mut PinyinArray) {
     }
 }
 
-
-fn to_pinyin<'a>(str: *const c_char) -> PinyinStrIter<'a> {
-    let text = unsafe { CStr::from_ptr(str) }.to_str().unwrap();
-    text.to_pinyin()
-}
-
-fn to_pinyin_multi<'a>(str: *const c_char) -> PinyinMultiStrIter<'a> {
-    let text = unsafe { CStr::from_ptr(str) }.to_str().unwrap();
-    text.to_pinyin_multi()
-}
-
 fn const_to_str(str: *const c_char) -> &'static str {
     return unsafe { CStr::from_ptr(str) }.to_str().unwrap();
 }
 
 #[cfg(test)]
 mod tests {
-    use pinyin::{ToPinyin, ToPinyinMulti, Pinyin};
-    use crate::to_pinyin;
-    use std::os::raw::c_char;
-    use std::ffi::{CString, CStr};
+    use std::ffi::CStr;
+    use crate::{Mode, to_pinyin, to_pinyin_array};
 
     #[test]
     fn it_works() {
 
-        let str = "中国人。。。";
+        let str = "我是中国人。😊，欧耶";
 
-        let mut chars = str.chars();
+        let pinyin_str = to_pinyin(str, true, true, Mode::ToneNumEnd);
+        println!("plain: {}", pinyin_str);
 
-        let pinyin = str.to_pinyin();
 
-        let m = pinyin.enumerate().map(|(i, single)| -> String {
-            match single {
-                None => {
-                    str.chars().nth(i).unwrap().to_string()
-                }
-                Some(py) => py.plain().to_string()
-            }
-
-        }).collect::<Vec<String>>().join(" ");
-
-        println!("m = {}", m);
-
-        let p = CString::new("中国人").unwrap().into_raw();
-        let m: String = to_pinyin(p).map(|t| {
-           return match t {
-                Some(py) => py.plain(),
-                None => "-"
-            }
-        }).collect::<Vec<&'static str>>().join(" ");
-        assert_eq!("zhong guo ren", m);
-
-        let iter = "中国人。。。".to_pinyin_multi();
-        let mut vec:Vec<String> = Vec::new();
-        for item in iter {
-            if let Some(item) = item {
-                if item.count() > 1 {
-                    vec.push(
-                        item.into_iter().map(|x| {
-                            x.with_tone()
-                        }).collect::<Vec<&'static str>>().join(":")
-                    )
-                } else {
-                    vec.push(item.get(0).with_tone().to_string())
-                }
-            } else {
-                vec.push(String::from("-"));
-            }
+        let str = "最快的汉字转拼音库。😊，欧耶";
+        let pinyin_vec = to_pinyin_array(str, true, true, Mode::ToneNumEnd);
+        for x in pinyin_vec {
+            println!("char : {}", unsafe {CStr::from_ptr(x.data)}.to_str().unwrap());
         }
-        println!("{}", vec.join(" "));
-        let str = "中国人。我fdafd😄";
-        let pinyin = str.to_pinyin();
-        let mut i = 0;
-        for x in pinyin {
-            match x {
-                None => {
-                    println!(" index = {}", str.chars().nth(i).unwrap())
-                }
-                Some(py) => {
-                    println!(" word = {}", py.plain())
-                }
-            }
-            i = i + 1;
-        }
+
     }
 }
 

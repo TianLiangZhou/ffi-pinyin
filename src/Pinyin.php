@@ -14,7 +14,37 @@ class Pinyin
     /**
      * @var FFI
      */
-    protected FFI $ffi;
+    private FFI $ffi;
+
+    /**
+     * 无音标模式
+     */
+    const Plain = 1;
+
+    /**
+     * 音标模式
+     */
+    const Tone = 2;
+
+    /**
+     * 音字母模式
+     */
+    const Letter = 3;
+
+    /**
+     * 音标数字模式
+     */
+    const ToneNum = 4;
+
+    /**
+     * 音标数字末尾模式
+     */
+    const ToneNumEnd = 5;
+
+    /**
+     * 默认分隔符
+     */
+    const Separator = ' ';
 
     /**
      * FFIPinyin constructor.
@@ -38,6 +68,17 @@ class Pinyin
         return self::$py;
     }
 
+    /**
+     * @return FFI
+     */
+    public function getFfi(): FFI
+    {
+        return $this->ffi;
+    }
+
+    /**
+     * @return void
+     */
     private function __clone()
     {
 
@@ -47,173 +88,187 @@ class Pinyin
      * 普通风格没有音调
      *
      * @param string $str
-     * @param bool $isConvert 是否将无法识别的字转成 "-"
+     * @param bool $isSkipUnknown 跳过未识别字符
      * @param bool $isMulti 是否多音字模式
+     * @param string $separator 分隔符默认 '-'
+     * @param bool $notSplitUnknownChar 不分隔未识别的字符
      * @return string
      */
-    public function plain(string $str, bool $isConvert = true, bool $isMulti = false): string
+    public function plain(string $str, bool $isSkipUnknown = true, bool $isMulti = false, string $separator = self::Separator, bool $notSplitUnknownChar = false): string
     {
         if (empty($str)) {
             return "";
         }
-        $char = $this->ffi->plain($str, (int) $isConvert, (int) $isMulti);
-        return $this->convert($char);
+        return $this->toPinyin($str, (int) $isSkipUnknown, (int) $isMulti, $separator, (int) $notSplitUnknownChar, self::Plain);
     }
 
     /**
      * 音调
      *
      * @param string $str
-     * @param bool $isConvert 是否将无法识别的字转成 "-"
+     * @param bool $isSkipUnknown 跳过未识别字符
      * @param bool $isMulti 是否多音字模式
+     * @param string $separator 分隔符默认 '-'
+     * @param bool $notSplitUnknownChar 不分隔未识别的字符
      * @return string
      */
-    public function tone(string $str, bool $isConvert = true, bool $isMulti = false): string
+    public function tone(string $str, bool $isSkipUnknown = true, bool $isMulti = false, string $separator = self::Separator, bool $notSplitUnknownChar = false): string
     {
         if (empty($str)) {
             return "";
         }
-        $char = $this->ffi->tone($str, (int) $isConvert, (int) $isMulti);
-        return $this->convert($char);
+        return $this->toPinyin($str, (int) $isSkipUnknown, (int) $isMulti, $separator, $notSplitUnknownChar, self::Tone);
     }
 
     /**
      * 音调为数字
      *
      * @param string $str
-     * @param bool $isConvert 是否将无法识别的字转成 "-"
+     * @param bool $isSkipUnknown 跳过未识别字符
      * @param bool $isMulti 是否多音字模式
+     * @param string $separator 分隔符默认 '-'
+     * @param bool $notSplitUnknownChar 不分隔未识别的字符
      * @return string
      */
-    public function toneNum(string $str, bool $isConvert = true, bool $isMulti = false): string
+    public function toneNum(string $str, bool $isSkipUnknown = true, bool $isMulti = false, string $separator = self::Separator, bool $notSplitUnknownChar = false): string
     {
         if (empty($str)) {
             return "";
         }
-        $char = $this->ffi->tone_num($str, (int) $isConvert, (int) $isMulti);
-        return $this->convert($char);
+        return $this->toPinyin($str, (int) $isSkipUnknown, (int) $isMulti, $separator, $notSplitUnknownChar, self::ToneNum);
     }
 
     /**
      * 音调为数字
      *
      * @param string $str
-     * @param bool $isConvert 是否将无法识别的字转成 "-"
+     * @param bool $isSkipUnknown 跳过未识别字符
      * @param bool $isMulti 是否多音字模式
+     * @param string $separator 分隔符默认 '-'
+     * @param bool $notSplitUnknownChar 不分隔未识别的字符
      * @return string
      */
-    public function toneNumEnd(string $str, bool $isConvert = true, bool $isMulti = false): string
+    public function toneNumEnd(string $str, bool $isSkipUnknown = true, bool $isMulti = false, string $separator = self::Separator, bool $notSplitUnknownChar = false): string
     {
         if (empty($str)) {
             return "";
         }
-        $char = $this->ffi->tone_num_end($str, (int) $isConvert, (int) $isMulti);
-        return $this->convert($char);
+        return $this->toPinyin($str, (int) $isSkipUnknown, (int) $isMulti, $separator, (int) $notSplitUnknownChar, self::ToneNumEnd);
     }
 
     /**
      * 首字母
      *
      * @param string $str
-     * @param bool $isConvert 是否将无法识别的字转成 "-"
+     * @param bool $isSkipUnknown 跳过未识别字符
      * @param bool $isMulti 是否多音字模式
+     * @param string $separator 分隔符默认 '-'
+     * @param bool $notSplitUnknownChar 不分隔未识别的字符
      * @return string
      */
-    public function letter(string $str, bool $isConvert = true, bool $isMulti = false): string
+    public function letter(string $str, bool $isSkipUnknown = true, bool $isMulti = false, string $separator = self::Separator, bool $notSplitUnknownChar = false): string
     {
         if (empty($str)) {
             return "";
         }
-        $char = $this->ffi->letter($str, (int) $isConvert, (int) $isMulti);
-        return $this->convert($char);
+        return $this->toPinyin($str, (int) $isSkipUnknown, (int) $isMulti, $separator, (int) $notSplitUnknownChar, self::Letter);
     }
 
     /**
      *
      * @param string $str
-     * @param bool $isConvert 是否将无法识别的字转成 "-"
+     * @param bool $isSkipUnknown 跳过未识别字符
      * @param bool $isMulti 是否多音字模式
+     * @param bool $notSplitUnknownChar 不分隔未识别的字符
      * @return array
      */
-    public function plainArray(string $str, bool $isConvert = true, bool $isMulti = false): array
+    public function plainArray(string $str, bool $isSkipUnknown = true, bool $isMulti = false, bool $notSplitUnknownChar = false): array
     {
         if (empty($str)) {
             return [];
         }
-        $plainArray = $this->ffi->plain_array($str, (int) $isConvert, (int) $isMulti);
-        return $this->convertArray($plainArray);
+        return $this->toPinyinArray($str, (int) $isSkipUnknown, (int) $isMulti, (int) $notSplitUnknownChar, self::Plain);
     }
 
     /**
      *
      * @param string $str
-     * @param bool $isConvert 是否将无法识别的字转成 "-"
+     * @param bool $isSkipUnknown 跳过未识别字符
      * @param bool $isMulti 是否多音字模式
+     * @param bool $notSplitUnknownChar 不分隔未识别的字符
      * @return array
      */
-    public function toneArray(string $str, bool $isConvert = true, bool $isMulti = false): array
+    public function toneArray(string $str, bool $isSkipUnknown = true, bool $isMulti = false, bool $notSplitUnknownChar = false): array
     {
         if (empty($str)) {
             return [];
         }
-        $toneArray = $this->ffi->tone_array($str, (int) $isConvert, (int) $isMulti);
-        return $this->convertArray($toneArray);
+        return $this->toPinyinArray($str, (int) $isSkipUnknown, (int) $isMulti, (int) $notSplitUnknownChar, self::Tone);
     }
 
     /**
      *
      * @param string $str
-     * @param bool $isConvert 是否将无法识别的字转成 "-"
+     * @param bool $isSkipUnknown 跳过未识别字符
      * @param bool $isMulti 是否多音字模式
+     * @param bool $notSplitUnknownChar 不分隔未识别的字符
      * @return array
      */
-    public function toneNumArray(string $str, bool $isConvert = true, bool $isMulti = false): array
+    public function toneNumArray(string $str, bool $isSkipUnknown = true, bool $isMulti = false, bool $notSplitUnknownChar = false): array
     {
         if (empty($str)) {
             return [];
         }
-        $toneNumArray = $this->ffi->tone_array($str, (int) $isConvert, (int) $isMulti);
-        return $this->convertArray($toneNumArray);
+        return $this->toPinyinArray($str, (int) $isSkipUnknown, (int) $isMulti, (int) $notSplitUnknownChar, self::ToneNum);
     }
 
     /**
      *
      * @param string $str
-     * @param bool $isConvert 是否将无法识别的字转成 "-"
+     * @param bool $isSkipUnknown 跳过未识别字符
      * @param bool $isMulti 是否多音字模式
+     * @param bool $notSplitUnknownChar 不分隔未识别的字符
      * @return array
      */
-    public function toneNumEndArray(string $str, bool $isConvert = true, bool $isMulti = false): array
+    public function toneNumEndArray(string $str, bool $isSkipUnknown = true, bool $isMulti = false, bool $notSplitUnknownChar = false): array
     {
         if (empty($str)) {
             return [];
         }
-        $toneNumEndArray = $this->ffi->tone_array($str, (int) $isConvert, (int) $isMulti);
-        return $this->convertArray($toneNumEndArray);
+        return $this->toPinyinArray($str, (int) $isSkipUnknown, (int) $isMulti, (int) $notSplitUnknownChar, self::ToneNumEnd);
     }
 
     /**
      *
      * @param string $str
-     * @param bool $isConvert 是否将无法识别的字转成 "-"
+     * @param bool $isSkipUnknown 跳过未识别字符
      * @param bool $isMulti 是否多音字模式
+     * @param bool $notSplitUnknownChar 不分隔未识别的字符
      * @return array
      */
-    public function letterArray(string $str, bool $isConvert = true, bool $isMulti = false): array
+    public function letterArray(string $str, bool $isSkipUnknown = true, bool $isMulti = false, bool $notSplitUnknownChar = false): array
     {
         if (empty($str)) {
             return [];
         }
-        $letterArray = $this->ffi->tone_array($str, (int) $isConvert, (int) $isMulti);
-        return $this->convertArray($letterArray);
+        return $this->toPinyinArray($str, (int) $isSkipUnknown, (int) $isMulti, (int) $notSplitUnknownChar, self::Letter);
     }
 
     /**
-     * @param FFI\CData $CData
+     * @param string $str
+     * @param int $isSkipUnknown
+     * @param int $isMulti
+     * @param string $separator
+     * @param int $notSplitUnknownChar
+     * @param int $mode
      * @return string
      */
-    private function convert(FFI\CData $CData)
+    private function toPinyin(string $str, int $isSkipUnknown, int $isMulti, string $separator, int $notSplitUnknownChar, int $mode): string
     {
+        if (strlen($separator) != 1) {
+            throw new \InvalidArgumentException("Separator only supports ascii characters");
+        }
+        $CData = $this->ffi->to_pinyin($str, $isSkipUnknown, $isMulti, ord($separator), $notSplitUnknownChar, $mode);
         $result = FFI::string($CData);
         $this->ffi->free_pointer($CData);
         return $result;
@@ -221,11 +276,16 @@ class Pinyin
 
 
     /**
-     * @param FFI\CData $cData
+     * @param $str
+     * @param int $isSkipUnknown
+     * @param int $isMulti
+     * @param int $notSplitUnknownChar
+     * @param int $mode
      * @return array
      */
-    private function convertArray(FFI\CData $cData)
+    private function toPinyinArray($str, int $isSkipUnknown, int $isMulti, int $notSplitUnknownChar, int $mode): array
     {
+        $cData = $this->ffi->to_pinyin_array($str, $isSkipUnknown, $isMulti, $notSplitUnknownChar, $mode);
         $pinyin = [];
         for ($i = 0; $i < $cData->len; $i++) {
             $pinyin[] =  FFI::string($cData->array[$i]->data, $cData->array[$i]->len);

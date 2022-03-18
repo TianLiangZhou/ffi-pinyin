@@ -15,7 +15,7 @@
         "ext-ffi": "*"
     },
     "require-dev": {
-        "phpbench/phpbench": "^0.17.1",
+        "phpbench/phpbench": "^1.2.5",
         "overtrue/pinyin": "^4.0"
     },
     "autoload": {

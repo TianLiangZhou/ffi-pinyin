@@ -3,10 +3,20 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+enum Mode {
+  Plain = 1,
+  Tone = 2,
+  Letter = 3,
+  ToneNum = 4,
+  ToneNumEnd = 5,
+};
+typedef uint8_t Mode;
+
 typedef struct PinyinStr {
   uintptr_t len;
   char *data;
   bool owned;
+  uint8_t convert;
 } PinyinStr;
 
 typedef struct PinyinArray {
@@ -14,26 +24,19 @@ typedef struct PinyinArray {
   struct PinyinStr *array;
 } PinyinArray;
 
-char *plain(const char *str, int is_convert, int is_multi);
+char *to_pinyin(const char *str,
+                int is_ignore_unknown_char,
+                int is_multi,
+                unsigned char separator,
+                int not_split_unknown_char,
+                Mode mode);
 
-char *tone(const char *str, int is_convert, int is_multi);
-
-char *tone_num(const char *str, int is_convert, int is_multi);
-
-char *tone_num_end(const char *str, int is_convert, int is_multi);
-
-char *letter(const char *str, int is_convert, int is_multi);
-
-PinyinArray *plain_array(const char *str, int is_convert, int is_multi);
-
-PinyinArray *tone_array(const char *str, int is_convert, int is_multi);
-
-PinyinArray *tone_num_array(const char *str, int is_convert, int is_multi);
-
-PinyinArray *tone_num_end_array(const char *str, int is_convert, int is_multi);
-
-PinyinArray *letter_array(const char *str, int is_convert, int is_multi);
+struct PinyinArray *to_pinyin_array(const char *str,
+                                    int is_ignore_unknown_char,
+                                    int is_multi,
+                                    int not_split_unknown_char,
+                                    Mode mode);
 
 void free_pointer(char *ptr);
 
-void free_array(PinyinArray *array);
+void free_array(struct PinyinArray *array);

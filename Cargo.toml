@@ -13,7 +13,7 @@ crate-type = ["cdylib"]
 path = "src/lib.rs"
 
 [build-dependencies]
-cbindgen = "0.18.0"
+cbindgen = "0.20.0"
 
 [dependencies]
-pinyin = "0.8"
+pinyin = "0.9.0"

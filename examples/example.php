@@ -10,18 +10,19 @@ echo "音标: ", $py->tone("中国人", false, false), "\n";
 echo "音标数字: ", $py->toneNum("中国人", false, false), "\n";
 echo "音标数字结尾: ", $py->toneNumEnd("中国人", false, false), "\n";
 echo "首字母: ", $py->letter("中国人", false, false), "\n";
-
-
 echo "音标转换模式: ", $py->tone("中国人😄😄", true, false), "\n";
 echo "音标多音词模式: ", $py->tone("中国人", false, true), "\n";
 
-var_export($py->plainArray("我的中国心，永恒之❤️", false, false));
+echo "音标未识别跳过: ", $py->plain("PHP永远滴神，rust永远的神", true, false, '-'), "\n";
+echo "音标未识别不分隔: ", $py->plain("PHP永远滴神，rust永远的神", false, false, '-', true), "\n";
+
+var_export($py->plainArray("PHP永远滴神，rust永远的神", false, false, true));
 echo "\n";
-var_export($py->toneArray("我的中国心，永恒之❤️", false, false));
+var_export($py->toneArray("我的中国心，永恒之❤️", true, false));
 echo "\n";
 var_export($py->toneNumArray("我的中国心，永恒之❤️", false, false));
 echo "\n";
-var_export($py->toneNumEndArray("我的中国心，永恒之❤️", false, false));
+var_export($py->toneNumEndArray("我的中国心，永恒之❤️", true, false, true));
 echo "\n";
 var_export($py->letterArray("我的中国心，永恒之❤️", false, false));
 echo "\n";

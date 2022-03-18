@@ -25,46 +25,44 @@ echo "音标: ", $py->tone("中国人", false, false), "\n";
 echo "音标数字: ", $py->toneNum("中国人", false, false), "\n";
 echo "音标数字结尾: ", $py->toneNumEnd("中国人", false, false), "\n";
 echo "首字母: ", $py->letter("中国人", false, false), "\n";
-
 echo "音标转换模式: ", $py->tone("中国人😄😄", true, false), "\n";
-echo "音标多音字模式: ", $py->tone("中国人", false, true), "\n";
+echo "音标多音词模式: ", $py->tone("中国人", false, true), "\n";
 
-var_export($py->plainArray("我的中国心，永恒之❤️", false, false));
+echo "音标未识别跳过: ", $py->plain("PHP永远滴神，rust永远的神", true, false, '-'), "\n";
+echo "音标未识别不分隔: ", $py->plain("PHP永远滴神，rust永远的神", false, false, '-', true), "\n";
 
+
+var_export($py->plainArray("PHP永远滴神，rust永远的神", false, false, true));
 ```
 
 以上程序执行后的结果: 
 
-> 无音标: zhong guo ren . . . 😄 😄 👩
->  
-> 音标: zhōng guó rén
-> 
-> 音标数字: zho1ng guo2 re2n
-> 
-> 音标数字结尾: zhong1 guo2 ren2
->
-> 首字母: z g r
-> 
-> 音标转换模式: zhōng guó rén - -
-> 
-> 音标多音词模式: zhōng:zhòng guó rén
->
-> array (
-> 0 => 'wo',
-> 1 => 'de',
-> 2 => 'zhong',
-> 3 => 'guo',
-> 4 => 'xin',
-> 5 => '，',
-> 6 => 'yong',
-> 7 => 'heng',
-> 8 => 'zhi',
-> 9 => '❤',
-> 10 => '️',
-> )
+```text
+无音标: zhong guo ren . . . 😄 😄 👩
+音标: zhōng guó rén
+音标数字: zho1ng guo2 re2n
+音标数字结尾: zhong1 guo2 ren2
+首字母: z g r
+音标转换模式: zhōng guó rén
+音标多音词模式: zhōng:zhòng guó rén
+音标未识别跳过: yong-yuan-di-shen-yong-yuan-de-shen
+音标未识别不分隔: PHP-yong-yuan-di-shen-，rust-yong-yuan-de-shen
 
+array (
+  0 => 'PHP',
+  1 => 'yong',
+  2 => 'yuan',
+  3 => 'di',
+  4 => 'shen',
+  5 => '，rust',
+  6 => 'yong',
+  7 => 'yuan',
+  8 => 'de',
+  9 => 'shen',
+)
+```
 
-转换后的多个拼音都是以`" "`空格隔开，不能识别的字符都是以`-`来代替，多音字是以`:`来连接的。
+多音字是以`:`来连接的。
 
 ### Benchmark
 

@@ -16,6 +16,8 @@ echo "音标多音词模式: ", $py->tone("中国人", false, true), "\n";
 echo "音标未识别跳过: ", $py->plain("PHP永远滴神，rust永远的神", true, false, '-'), "\n";
 echo "音标未识别不分隔: ", $py->plain("PHP永远滴神，rust永远的神", false, false, '-', true), "\n";
 
+echo "URL slug:" . $py->slug("JavaScript使用FileReader读取本地文件内容"), "\n";
+
 var_export($py->plainArray("PHP永远滴神，rust永远的神", false, false, true));
 echo "\n";
 var_export($py->toneArray("我的中国心，永恒之❤️", true, false));

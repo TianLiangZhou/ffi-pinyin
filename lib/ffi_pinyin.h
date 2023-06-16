@@ -29,7 +29,8 @@ char *to_pinyin(const char *str,
                 int is_multi,
                 unsigned char separator,
                 int not_split_unknown_char,
-                Mode mode);
+                Mode mode,
+                int is_slug);
 
 struct PinyinArray *to_pinyin_array(const char *str,
                                     int is_ignore_unknown_char,

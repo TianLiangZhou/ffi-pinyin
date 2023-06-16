@@ -51,7 +51,7 @@ class Pinyin
      */
     private function __construct()
     {
-        if (ini_get('ffi.enable') == false) {
+        if (!ini_get('ffi.enable')) {
             throw new RuntimeException("请设置php.ini中的ffi.enable参数");
         }
         $this->ffi = $this->makeFFI();
@@ -82,6 +82,21 @@ class Pinyin
     private function __clone()
     {
 
+    }
+
+    /**
+     * 生成URL Slugs
+     *
+     * @param string $str
+     * @param string $separator
+     * @return string
+     */
+    public function slug(string $str, string $separator = '-'): string
+    {
+        if (empty($str)) {
+            return "";
+        }
+        return $this->toPinyin($str, false, false, $separator, false, self::Plain, 1);
     }
 
     /**
@@ -261,14 +276,15 @@ class Pinyin
      * @param string $separator
      * @param int $notSplitUnknownChar
      * @param int $mode
+     * @param int $isSlug
      * @return string
      */
-    private function toPinyin(string $str, int $isSkipUnknown, int $isMulti, string $separator, int $notSplitUnknownChar, int $mode): string
+    private function toPinyin(string $str, int $isSkipUnknown, int $isMulti, string $separator, int $notSplitUnknownChar, int $mode, int $isSlug = 0): string
     {
         if (strlen($separator) != 1) {
             throw new \InvalidArgumentException("Separator only supports ascii characters");
         }
-        $CData = $this->ffi->to_pinyin($str, $isSkipUnknown, $isMulti, ord($separator), $notSplitUnknownChar, $mode);
+        $CData = $this->ffi->to_pinyin($str, $isSkipUnknown, $isMulti, ord($separator), $notSplitUnknownChar, $mode, $isSlug);
         $result = FFI::string($CData);
         $this->ffi->free_pointer($CData);
         return $result;
@@ -316,10 +332,6 @@ class Pinyin
         $suffix = PHP_SHLIB_SUFFIX;
         if (PHP_OS == 'Darwin') {
             $suffix = 'dylib';
-            //mac m1 m2 arm64
-            if(php_uname('m') == 'arm64'){
-                $suffix= 'arm.dylib';
-            }
         }
         $filepath = __DIR__ . '/../lib/libffi_pinyin.' . $suffix;
         if (file_exists($filepath)) {

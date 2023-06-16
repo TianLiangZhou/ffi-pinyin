@@ -1,7 +1,6 @@
-use pinyin::{Pinyin, PinyinMulti, ToPinyin, ToPinyinMulti};
+use pinyin::{Pinyin, ToPinyin, ToPinyinMulti};
 use std::ffi::{CStr, CString};
-use std::os::raw::{c_char, c_int, c_schar, c_uchar};
-use std::thread::spawn;
+use std::os::raw::{c_char, c_int, c_uchar};
 use std::{mem, ptr};
 
 #[repr(C)]
@@ -89,10 +88,12 @@ fn to_convert(
     separator: char,
     not_split_unknown_char: bool,
     mode: Mode,
+    is_slug: bool,
 ) -> String {
     let chars = str.chars().collect::<Vec<char>>();
     let mut unknown = String::new();
     let mut vec: Vec<String> = Vec::new();
+    let sep = separator.to_string();
     for word in str.to_pinyin().enumerate() {
         match word.1 {
             None => {
@@ -100,26 +101,34 @@ fn to_convert(
                     continue;
                 }
                 let word_char = chars.get(word.0).unwrap();
-                if not_split_unknown_char {
-                    unknown.push(*word_char);
-                    if word.0 == chars.len() - 1 {
-                        vec.push(unknown.clone());
-                        unknown.clear();
+                if is_slug {
+                    if *word_char == ' ' {
+                        unknown.push(separator);
+                        continue;
                     }
-                } else {
+                    if !word_char.is_ascii_alphanumeric() {
+                        continue;
+                    }
+                } else if !not_split_unknown_char {
                     vec.push(word_char.to_string());
+                    continue;
                 }
+                unknown.push(*word_char);
             }
             Some(py) => {
-                if !is_ignore_unknown_char && not_split_unknown_char && unknown.len() > 0 {
-                    vec.push(unknown.clone());
+                if unknown.len() > 0 {
+                    vec.push(unknown.to_string());
                     unknown.clear();
                 }
                 vec.push(match_mode(py, mode));
             }
         }
     }
-    vec.join(separator.encode_utf8(&mut [0; 4]))
+    if unknown.len() > 0 {
+        vec.push(unknown.to_string());
+    }
+    vec.join(sep.as_str())
+        .replace(&format!("{}{}", sep, sep), sep.as_str())
 }
 
 ///
@@ -142,19 +151,15 @@ fn to_convert_multi(
                     continue;
                 }
                 let word_char = chars.get(word.0).unwrap();
-                if not_split_unknown_char {
-                    unknown.push(*word_char);
-                    if word.0 == chars.len() - 1 {
-                        vec.push(unknown.clone());
-                        unknown.clear();
-                    }
-                } else {
+                if !not_split_unknown_char {
                     vec.push(word_char.to_string());
+                    continue;
                 }
+                unknown.push(*word_char);
             }
             Some(multi) => {
-                if !is_ignore_unknown_char && not_split_unknown_char && unknown.len() > 0 {
-                    vec.push(unknown.clone());
+                if unknown.len() > 0 {
+                    vec.push(unknown.to_string());
                     unknown.clear();
                 }
                 vec.push(
@@ -166,6 +171,10 @@ fn to_convert_multi(
                 );
             }
         }
+    }
+    if unknown.len() > 0 {
+        vec.push(unknown.to_string());
+        unknown.clear();
     }
     vec.join(separator.encode_utf8(&mut [0; 4]))
 }
@@ -188,19 +197,15 @@ fn to_convert_array(
                         continue;
                     }
                     let word_char = chars.get(word.0).unwrap();
-                    if not_split_unknown_char {
-                        unknown.push(*word_char);
-                        if word.0 == chars.len() - 1 {
-                            vec.push(PinyinStr::from_string(unknown.clone(), 0));
-                            unknown.clear();
-                        }
-                    } else {
-                        vec.push(PinyinStr::from_string(word_char.to_string(), 0))
+                    if !not_split_unknown_char {
+                        vec.push(PinyinStr::from_string(word_char.to_string(), 0));
+                        continue;
                     }
+                    unknown.push(*word_char);
                 }
                 Some(multi) => {
-                    if !is_ignore_unknown_char && not_split_unknown_char && unknown.len() > 0 {
-                        vec.push(PinyinStr::from_string(unknown.clone(), 0));
+                    if unknown.len() > 0 {
+                        vec.push(PinyinStr::from_string(unknown.to_string(), 0));
                         unknown.clear();
                     }
                     vec.push(PinyinStr::from_string(
@@ -222,25 +227,25 @@ fn to_convert_array(
                         continue;
                     }
                     let word_char = chars.get(word.0).unwrap();
-                    if not_split_unknown_char {
-                        unknown.push(*word_char);
-                        if word.0 == chars.len() - 1 {
-                            vec.push(PinyinStr::from_string(unknown.clone(), 0));
-                            unknown.clear();
-                        }
-                    } else {
-                        vec.push(PinyinStr::from_string(word_char.to_string(), 0))
+                    if !not_split_unknown_char {
+                        vec.push(PinyinStr::from_string(word_char.to_string(), 0));
+                        continue;
                     }
+                    unknown.push(*word_char);
                 }
                 Some(py) => {
-                    if !is_ignore_unknown_char && not_split_unknown_char && unknown.len() > 0 {
-                        vec.push(PinyinStr::from_string(unknown.clone(), 0));
+                    if unknown.len() > 0 {
+                        vec.push(PinyinStr::from_string(unknown.to_string(), 0));
                         unknown.clear();
                     }
                     vec.push(PinyinStr::from_string(match_mode(py, mode), 1))
                 }
             }
         }
+    }
+    if unknown.len() > 0 {
+        vec.push(PinyinStr::from_string(unknown.to_string(), 0));
+        unknown.clear();
     }
     vec
 }
@@ -260,8 +265,9 @@ pub extern "C" fn to_pinyin(
     separator: c_uchar,
     not_split_unknown_char: c_int,
     mode: Mode,
+    is_slug: c_int,
 ) -> *mut c_char {
-    let pinyin_str = if is_multi == 1 {
+    let mut pinyin_str = if is_multi == 1 {
         to_convert_multi(
             const_to_str(str),
             is_ignore_unknown_char == 1,
@@ -276,8 +282,12 @@ pub extern "C" fn to_pinyin(
             separator as char,
             not_split_unknown_char == 1,
             mode,
+            is_slug == 1,
         )
     };
+    if is_slug == 1 {
+        pinyin_str = pinyin_str.to_lowercase()
+    }
     return CString::new(pinyin_str).unwrap().into_raw();
 }
 
@@ -307,7 +317,7 @@ pub extern "C" fn free_pointer(ptr: *mut c_char) {
             return;
         }
         // Here we reclaim ownership of the data the pointer points to, to free the memory properly.
-        CString::from_raw(ptr);
+        let _ = CString::from_raw(ptr);
     }
 }
 
@@ -315,7 +325,7 @@ pub extern "C" fn free_pointer(ptr: *mut c_char) {
 pub unsafe extern "C" fn free_array(array: *mut PinyinArray) {
     if !array.is_null() {
         Vec::from_raw_parts((*array).array, (*array).len, (*array).len);
-        Box::from_raw(array);
+        let _ = Box::from_raw(array);
     }
 }
 
@@ -325,15 +335,20 @@ fn const_to_str(str: *const c_char) -> &'static str {
 
 #[cfg(test)]
 mod tests {
-    use crate::{to_convert, to_convert_array, to_convert_multi, Mode};
+    use crate::{match_mode, to_convert, to_convert_array, to_convert_multi, Mode};
+    use pinyin::ToPinyin;
     use std::ffi::CStr;
     use std::os::raw::c_char;
 
     #[test]
     fn it_works() {
+        let str = "slug标题类型测试 test test通过";
+
+        let pinyin_str_slug = to_convert(str, false, '-', true, Mode::Plain, true);
+        println!("slug: {}", pinyin_str_slug);
         let str = "测试中文汉字转拼音。😊，rust yyds加上不能识别的结尾。。。";
 
-        let pinyin_str = to_convert(str, false, '-', true, Mode::Plain);
+        let pinyin_str = to_convert(str, false, '-', true, Mode::Plain, false);
         println!("plain: {}", pinyin_str);
 
         let pinyin_str = to_convert_multi(str, true, '-', true, Mode::Tone);

@@ -332,6 +332,10 @@ class Pinyin
         $suffix = PHP_SHLIB_SUFFIX;
         if (PHP_OS == 'Darwin') {
             $suffix = 'dylib';
+            //mac m1 m2 arm64
+            if(php_uname('m') == 'arm64'){
+                $suffix= 'arm.dylib';
+            }
         }
         $filepath = __DIR__ . '/../lib/libffi_pinyin.' . $suffix;
         if (file_exists($filepath)) {
